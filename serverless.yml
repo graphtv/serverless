@@ -17,9 +17,12 @@ service: GraphTV-Serverless
 # Check out our docs for more details
 # frameworkVersion: "=X.X.X"
 
+custom: ${file(serverless.${opt:stage}.yml)}
+
 provider:
   name: aws
   runtime: python3.6
+
 
 # you can overwrite defaults here
 #  stage: dev
@@ -93,6 +96,25 @@ functions:
 #    environment:
 #      variable2: value2
 
+resources:
+  Resources:
+    ExecuteShowsRatings:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          Fn::GetAtt: [ ShowsRatingsLambdaFunction, Arn ]
+        Action: 'lambda:InvokeFunction'
+        Principal: apigateway.amazonaws.com
+        SourceArn:
+          Fn::Join:
+            - ''
+            - - 'arn:aws:execute-api:'
+              - Ref: 'AWS::Region'
+              - ':'
+              - Ref: 'AWS::AccountId'
+              - ':${self:custom.api_gateway_id}/*/GET/shows/*/ratings'
+
+#SourceArn: 'arn:aws:execute-api:${self:custom.aws_region}:${self:custom.aws_account_id}:${self:custom.api_gateway_id}/*/GET/shows/*/ratings'
 # you can add CloudFormation resource templates here
 #resources:
 #  Resources:

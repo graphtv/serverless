@@ -117,3 +117,5 @@ data/
 # Serverless directories
 .serverless
 node_modules
+serverless.*.yml
+!serverless.stage-example.yml
