@@ -1,13 +1,12 @@
 import boto3
 import zlib
-import json
+import os
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('GraphTV-Ratings-Prod')
+table = dynamodb.Table(os.environ['RATINGS_TABLE'])
 
 
 def get_ratings(event, context):
-    print(event)
     response = table.get_item(
         Key={
             'id': event['pathParameters']['showId']
@@ -19,17 +18,70 @@ def get_ratings(event, context):
     # Return decompressed JSON data (415x execution time)
     # return json.loads(zlib.decompress(response['Item']['data'].value).decode())
     #return {'data': base64.b64encode(response['Item']['data'].value).decode('utf-8')}
-    return {
-        'statusCode': 200,
-        'headers': {
-            'x-custom-header': 'my custom header value'
-        },
-        'body': zlib.decompress(response['Item']['data'].value).decode(),
-        'isBase64Encoded': False
-    }
+    if response['Item']['data'].value[:1] == '{':
+        # If this is straight JSON
+        return {
+            'statusCode': 200,
+            'headers': {
+                'x-custom-header': 'my custom header value'
+            },
+            'body': response['Item']['data'].value,
+            'isBase64Encoded': False
+        }
+    else:
+        # If it doesn't begin with '{' then it is compressed
+        return {
+            'statusCode': 200,
+            'headers': {
+                'x-custom-header': 'my custom header value'
+            },
+            'body': zlib.decompress(response['Item']['data'].value).decode(),
+            'isBase64Encoded': False
+        }
 
 
 if __name__ == '__main__':
     # execute only if run as the entry point into the program
-    get_ratings({"id": "tt0903747"}, None)
-    #get_ratings({"id": "tt0058796"}, None)
+    print(
+        get_ratings(
+            event={
+                'resource': '/shows/{showId}/ratings',
+                'path': '/shows/3N6z/ratings',
+                'httpMethod': 'GET',
+                'headers': None,
+                'queryStringParameters': None,
+                'pathParameters': {
+                    'showId': '3N6z'
+                },
+                'stageVariables': None,
+                'requestContext': {
+                    'path': '/shows/{showId}/ratings',
+                    'accountId': '123456789012',
+                    'resourceId': 'abcdef',
+                    'stage': 'test-invoke-stage',
+                    'requestId': 'test-invoke-request',
+                    'identity': {
+                        'cognitoIdentityPoolId': None,
+                        'cognitoIdentityId': None,
+                        'apiKey': 'test-invoke-api-key',
+                        'cognitoAuthenticationType': None,
+                        'userArn': 'arn:aws:iam::123456789012:user/GraphTV',
+                        'apiKeyId': 'test-invoke-api-key-id',
+                        'userAgent': 'Apache-HttpClient/4.5.x (Java/1.8.0_144)',
+                        'accountId': '123456789012',
+                        'caller': 'CALLERABCDEFGHIJKLMNO',
+                        'sourceIp': 'test-invoke-source-ip',
+                        'accessKey': 'ACCESSKEYZYXWVUTSRQP',
+                        'cognitoAuthenticationProvider': None,
+                        'user': 'USERABCDEFGHIJKLMNOPQ'
+                    },
+                    'resourcePath': '/shows/{showId}/ratings',
+                    'httpMethod': 'GET',
+                    'apiId': 'abcdefghij'
+                },
+                'body': None,
+                'isBase64Encoded': False
+            },
+            context=None
+        )
+    )
