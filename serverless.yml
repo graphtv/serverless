@@ -21,13 +21,13 @@ package:
     - graphtv/**
 
 functions:
-  ShowsRatings:
+  ShowRatings:
     handler: ratings.get_ratings
     memorySize: 128
     timeout: 10
     environment:
       RATINGS_TABLE: GraphTV-Ratings-${opt:stage}
-  ShowsSearch:
+  Search:
     handler: search.search
     memorySize: 128
     timeout: 10
@@ -36,11 +36,11 @@ functions:
 
 resources:
   Resources:
-    ExecuteShowsRatings:
+    ExecuteShowRatings:
       Type: AWS::Lambda::Permission
       Properties:
         FunctionName:
-          Fn::GetAtt: [ ShowsRatingsLambdaFunction, Arn ]
+          Fn::GetAtt: [ ShowRatingsLambdaFunction, Arn ]
         Action: 'lambda:InvokeFunction'
         Principal: apigateway.amazonaws.com
         SourceArn:
@@ -50,12 +50,12 @@ resources:
               - Ref: 'AWS::Region'
               - ':'
               - Ref: 'AWS::AccountId'
-              - ':${self:custom.api_gateway_id}/*/GET/shows/*/ratings'
-    ExecuteShowsSearch:
+              - ':${self:custom.api_gateway_id}/*/GET/show/*/ratings'
+    ExecuteSearch:
       Type: AWS::Lambda::Permission
       Properties:
         FunctionName:
-          Fn::GetAtt: [ ShowsSearchLambdaFunction, Arn ]
+          Fn::GetAtt: [ SearchLambdaFunction, Arn ]
         Action: 'lambda:InvokeFunction'
         Principal: apigateway.amazonaws.com
         SourceArn:
@@ -65,4 +65,4 @@ resources:
               - Ref: 'AWS::Region'
               - ':'
               - Ref: 'AWS::AccountId'
-              - ':${self:custom.api_gateway_id}/*/GET/shows/search/*'
+              - ':${self:custom.api_gateway_id}/*/GET/search/*'
