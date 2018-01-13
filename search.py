@@ -2,7 +2,7 @@ import os
 import json
 import boto3
 import urllib
-import time
+from collections import OrderedDict
 
 client = boto3.client('s3')
 result = client.get_object(
@@ -15,11 +15,15 @@ show_list = json.loads(result["Body"].read().decode('utf-8'))
 def search(event, context):
     # https://stackoverflow.com/questions/319426/how-do-i-do-a-case-insensitive-string-comparison
     search_term = urllib.parse.unquote(event['pathParameters']['query']).casefold()
-    results = [curShow for curShow in show_list if search_term in curShow['t'].casefold()]
+    raw_results = [curShow for curShow in show_list if search_term in curShow['t'].casefold()]
+    results = sorted(raw_results, key=lambda k: k['v'], reverse=True)
+    # May need to fix the Header here to be different depending on the API Gateway settings.
+    # Solution would be to add a API Gateway Stage Variable with the info and it will be
+    # passed in the request, which we just reference here.
     return {
         'statusCode': 200,
         'headers': {'Access-Control-Allow-Origin': '*'},
-        'body': json.dumps({'results': results}, ensure_ascii=False, separators=(',', ':')),
+        'body': json.dumps({'results': results[0:7]}, ensure_ascii=False, separators=(',', ':')),
         'isBase64Encoded': False
     }
 
@@ -57,7 +61,7 @@ if __name__ == '__main__':
                 "isBase64Encoded": False,
                 "path": "/search/Breaking%20B",
                 "pathParameters": {
-                    "query": "Breaking%20B"
+                    "query": "Break"
                 },
                 "queryStringParameters": None,
                 "requestContext": {

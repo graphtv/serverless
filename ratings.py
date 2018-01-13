@@ -17,14 +17,16 @@ def get_ratings(event, context):
     #
     # Return decompressed JSON data (415x execution time)
     # return json.loads(zlib.decompress(response['Item']['data'].value).decode())
-    #return {'data': base64.b64encode(response['Item']['data'].value).decode('utf-8')}
+    # return {'data': base64.b64encode(response['Item']['data'].value).decode('utf-8')}
+    #
+    # May need to fix the Header here to be different depending on the API Gateway settings.
+    # Solution would be to add a API Gateway Stage Variable with the info and it will be
+    # passed in the request, which we just reference here.
     if response['Item']['data'].value[:1] == '{':
         # If this is straight JSON
         return {
             'statusCode': 200,
-            'headers': {
-                'x-custom-header': 'my custom header value'
-            },
+            'headers': {'Access-Control-Allow-Origin': '*'},
             'body': response['Item']['data'].value,
             'isBase64Encoded': False
         }
@@ -32,9 +34,7 @@ def get_ratings(event, context):
         # If it doesn't begin with '{' then it is compressed
         return {
             'statusCode': 200,
-            'headers': {
-                'x-custom-header': 'my custom header value'
-            },
+            'headers': {'Access-Control-Allow-Origin': '*'},
             'body': zlib.decompress(response['Item']['data'].value).decode(),
             'isBase64Encoded': False
         }
