@@ -1,25 +1,25 @@
 import os
 import json
 import boto3
+import urllib
+import time
 
 client = boto3.client('s3')
 result = client.get_object(
     Bucket=os.environ['SEARCH_S3_BUCKET'],
     Key='search.json'
 )
-search_all = json.loads(result["Body"].read().decode('utf-8'))
+show_list = json.loads(result["Body"].read().decode('utf-8'))
+
 
 def search(event, context):
-    # Filter out from search_all into a new object and format it as Semantic UI needs
-    body = {
-        'random': "Some Random Crap"
-    }
+    # https://stackoverflow.com/questions/319426/how-do-i-do-a-case-insensitive-string-comparison
+    search_term = urllib.parse.unquote(event['pathParameters']['query']).casefold()
+    results = [curShow for curShow in show_list if search_term in curShow['t'].casefold()]
     return {
         'statusCode': 200,
-        'headers': {
-            'Access-Control-Allow-Origin': '*'
-        },
-        'body': json.dumps(body, ensure_ascii=False, separators=(',', ':')),
+        'headers': {'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'results': results}, ensure_ascii=False, separators=(',', ':')),
         'isBase64Encoded': False
     }
 
@@ -29,42 +29,67 @@ if __name__ == '__main__':
     print(
         search(
             event={
-                'resource': '/shows/search/{query}',
-                'path': '/shows/search/Breaking B',
-                'httpMethod': 'GET',
-                'headers': None,
-                'queryStringParameters': None,
-                'pathParameters': {
-                    'query': 'Breaking B'
+                "body": None,
+                "headers": {
+                    "Accept": "application/json, text/javascript, */*; q=0.01",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "CloudFront-Forwarded-Proto": "https",
+                    "CloudFront-Is-Desktop-Viewer": "true",
+                    "CloudFront-Is-Mobile-Viewer": "false",
+                    "CloudFront-Is-SmartTV-Viewer": "false",
+                    "CloudFront-Is-Tablet-Viewer": "false",
+                    "CloudFront-Viewer-Country": "US",
+                    "Host": "REDACTED-HOSTNAME",
+                    "Referer": "http://REDACTED-HOSTNAME/",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)...",
+                    "Via": "2.0 abc.cloudfront.net (CloudFront)",
+                    "X-Amz-Cf-Id": "a__b-c",
+                    "X-Amzn-Trace-Id": "Root=1-abc",
+                    "X-Forwarded-For": "1.2.3.4, 5.6.7.8",
+                    "X-Forwarded-Port": "443",
+                    "X-Forwarded-Proto": "https",
+                    "cache-control": "no-cache",
+                    "origin": "http://REDACTED-HOSTNAME",
+                    "pragma": "no-cache"
                 },
-                'stageVariables': None,
-                'requestContext': {
-                    'path': '/shows/search/{query}',
-                    'accountId': '123456789012',
-                    'resourceId': 'abcdef',
-                    'stage': 'test-invoke-stage',
-                    'requestId': 'test-invoke-request',
-                    'identity': {
-                        'cognitoIdentityPoolId': None,
-                        'cognitoIdentityId': None,
-                        'apiKey': 'test-invoke-api-key',
-                        'cognitoAuthenticationType': None,
-                        'userArn': 'arn:aws:iam::123456789012:user/GraphTV',
-                        'apiKeyId': 'test-invoke-api-key-id',
-                        'userAgent': 'Apache-HttpClient/4.5.x (Java/1.8.0_144)',
-                        'accountId': '123456789012',
-                        'caller': 'CALLERABCDEFGHIJKLMNO',
-                        'sourceIp': 'test-invoke-source-ip',
-                        'accessKey': 'ACCESSKEYZYXWVUTSRQP',
-                        'cognitoAuthenticationProvider': None,
-                        'user': 'USERABCDEFGHIJKLMNOPQ'
+                "httpMethod": "GET",
+                "isBase64Encoded": False,
+                "path": "/search/Breaking%20B",
+                "pathParameters": {
+                    "query": "Breaking%20B"
+                },
+                "queryStringParameters": None,
+                "requestContext": {
+                    "accountId": "123456789012",
+                    "apiId": "abcdefghij",
+                    "httpMethod": "GET",
+                    "identity": {
+                        "accessKey": None,
+                        "accountId": None,
+                        "caller": None,
+                        "cognitoAuthenticationProvider": None,
+                        "cognitoAuthenticationType": None,
+                        "cognitoIdentityId": None,
+                        "cognitoIdentityPoolId": None,
+                        "sourceIp": "9.8.7.6",
+                        "user": None,
+                        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gec...",
+                        "userArn": None
                     },
-                    'resourcePath': '/shows/search/{query}',
-                    'httpMethod': 'GET',
-                    'apiId': 'abcdefghij'
+                    "path": "/search/Breaking%20B",
+                    "protocol": "HTTP/1.1",
+                    "requestId": "a-b-c-d-e",
+                    "requestTime": "13/Jan/2018:07:16:56 +0000",
+                    "requestTimeEpoch": 1515827816576,
+                    "resourceId": "abcdef",
+                    "resourcePath": "/search/{query}",
+                    "stage": "live"
                 },
-                'body': None,
-                'isBase64Encoded': False
+                "resource": "/search/{query}",
+                "stageVariables": {
+                    "environment": "Dev"
+                }
             },
             context=None
         )
